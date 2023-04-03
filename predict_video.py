@@ -6,8 +6,8 @@ import cv2
 
 model = None
 reslution = (640, 640)
-fourcc = cv2.VideoWriter_fourcc(*'XVID') #codec
-out = cv2.VideoWriter('video.avi', fourcc, 15.0, reslution)
+fourcc = cv2.VideoWriter_fourcc(*'MP4V') #codec
+out = cv2.VideoWriter('video.mp4', fourcc, 30.0, reslution)
 progress = tqdm.tqdm(total=186)
 
 
@@ -15,8 +15,8 @@ test_image = "own_test_image\Cars361.png"
 video_path = "own_test_image\Testvideo.mp4"
 
 cap = cv2.VideoCapture(video_path)
+#cap.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
 #cap = cv2.VideoCapture(0)
-
 
 def load_model():
 
@@ -80,33 +80,20 @@ def draw_boxs(frame, predict_result):
 
     return cv2.cvtColor(numpy.array(img), cv2.COLOR_RGB2BGR)
 
-def video_stream(video_path):
-
-    global cap
-
-    ret, frame = cap.read()
-
-    if ret == False:
-        print("End of Video")
-        return ret, frame
-    
-    frame = cv2.resize(frame, (640, 640))
-
-    return ret, frame
-
 if __name__ == "__main__":
-    
 
     load_model()
 
     print("start predicting...")
 
     while cap.isOpened():
-    
-        ret, frame = video_stream(video_path)
+        
+        ret, frame = cap.read()
 
         if ret == False:
             break
+
+        frame = cv2.resize(frame, (640, 640))
 
         image = draw_boxs(frame, predict_frame(frame))
 
@@ -114,9 +101,11 @@ if __name__ == "__main__":
         out.write(image)
         progress.update(1)
 
-        if cv2.waitKey(1) == ord('q'):
-            break
+        #if cv2.waitKey(1) == ord('q'):
+            #break
     
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
+    print("Release Finish!")
