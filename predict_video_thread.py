@@ -9,10 +9,9 @@ import numpy
 model = None
 reslution = (640, 640)
 fourcc = cv2.VideoWriter_fourcc(*'MP4V') #codec
-out = cv2.VideoWriter('video.mp4', fourcc, 30.0, reslution)
+out = cv2.VideoWriter('video4.mp4', fourcc, 30.0, reslution)
 progress = tqdm.tqdm(total=186)
 
-# 定義一個影片讀取類別
 class VideoReader:
     def __init__(self, filename, queue):
         self.filename = filename
@@ -27,7 +26,6 @@ class VideoReader:
             self.queue.put(frame)
         self.cap.release()
 
-# 定義一個影片顯示類別
 class VideoPlayer:
     def __init__(self, queue):
         self.queue = queue
@@ -41,10 +39,11 @@ class VideoPlayer:
                 frame = self.queue.get()
                 frame = cv2.resize(frame, (640, 640))
                 image = self.draw_boxs(frame, self.predict_frame(frame))
+
                 out.write(image)
                 progress.update(1)
                 #cv2.imshow("Video", image)
-                #cv2.waitKey(1)
+                cv2.waitKey(1)
                 self.queue.task_done()
 
     def Stop(self):
@@ -54,7 +53,7 @@ class VideoPlayer:
     def predict_frame(self, frame):
 
         # visualize your prediction
-        predict_image = model.predict(frame, confidence=0, overlap=30)
+        predict_image = model.predict(frame, confidence=20, overlap=30)
 
         #print(predict_image.json())
 
@@ -74,9 +73,11 @@ class VideoPlayer:
         if predict_result == False:
             #print("No object detected!")
             return frame
+        else:
+            print("Object detected!")
 
         for box in predict_result:
-
+            
             color = "#4892EA"
             x1 = box['x'] - box['width'] / 2
             x2 = box['x'] + box['width'] / 2
@@ -104,20 +105,48 @@ class VideoPlayer:
             # put button on source image in position (0, 0)
             img.paste(button_img, (int(x1), int(y1) - 25))
 
-        return cv2.cvtColor(numpy.array(img), cv2.COLOR_RGB2BGR)
+            #print("#################Before Type is", type(img))
+            #img = cv2.cvtColor(numpy.array(img), cv2.COLOR_RGB2BGR)
+            img = numpy.array(img)
+            #integer_array = img.astype(int)
+            #print("#################After Type is", type(img))
+            
+            img = self.mosaic(int(x1), int(x2), int(y1), int(y2), img)
+            img = Image.fromarray(img)
+
+
+        img = numpy.array(img)
+        return img
     
+    def mosaic(self, x1, x2, y1, y2, image):
+
+        roi = image[y1:y2, x1:x2]
+        level = 15  
+        h, w = roi.shape[:2]
+        mosaic_h = int(h/level)   
+        mosaic_w = int(w/level)
+        #print("mosaic_h", mosaic_h)
+        #print("mosaic_w", mosaic_w)
+        mosaic_roi = cv2.resize(roi, (mosaic_w, mosaic_h), interpolation=cv2.INTER_LINEAR)  
+        mosaic_roi = cv2.resize(mosaic_roi, (w, h), interpolation=cv2.INTER_NEAREST) 
+        
+        image[y1:y2, x1:x2] = mosaic_roi
+
+        return image
+             
 def load_model():
 
     global model
     rf = Roboflow(api_key="x6vyQ8ceJzvDxz1zqxkv")
     project = rf.workspace("car-plate-o3kq6").project("cars-plate-yzoqy")
-    model = project.version(1).model
+    model = project.version(4).model
 
 if __name__ == '__main__':
 
     load_model()
 
-    filename = "own_test_image\Testvideo.mp4"
+    filename = "own_test_image\Testvideo3.mp4"
+    #filename = "hub2.mp4"
     queue = Queue(maxsize=10)
     
     # 創建一個影片讀取執行緒

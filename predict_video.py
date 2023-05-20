@@ -12,7 +12,7 @@ progress = tqdm.tqdm(total=186)
 
 
 test_image = "own_test_image\Cars361.png"
-video_path = "own_test_image\Testvideo.mp4"
+video_path = "own_test_image\Testvideo1.mp4"
 
 cap = cv2.VideoCapture(video_path)
 #cap.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)

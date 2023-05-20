@@ -1,8 +1,10 @@
 from roboflow import Roboflow
 from PIL import Image, ImageDraw, ImageFont
+import cv2
+import numpy
 
 model = None
-test_image = "own_test_image\Video_640_segment.png"
+test_image = "C:/Users/jacky/Desktop/_Recognize/Cars-Plate.v1i.yolov8/test/images/Cars182_png.rf.c1031e740bf488fe8528f5e9d050ebaf.jpg"
 
 def load_model():
 
@@ -72,6 +74,20 @@ def draw_boxs(image_path, predict_result):
         # put button on source image in position (0, 0)
         image.paste(button_img, (int(x1), int(y1) - 25))
 
+        #image = cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR)
+
+        image = numpy.array(image)
+
+        roi = image[int(y1):int(y2), int(x1):int(x2)]
+        level = 15  
+        h, w = roi.shape[:2]
+        mosaic_h = int(h/level)   
+        mosaic_w = int(w/level)   
+        mosaic_roi = cv2.resize(roi, (mosaic_w, mosaic_h), interpolation=cv2.INTER_LINEAR)  
+        mosaic_roi = cv2.resize(mosaic_roi, (w, h), interpolation=cv2.INTER_NEAREST) 
+        
+        image[int(y1):int(y2), int(x1):int(x2)] = mosaic_roi
+
     return image
 
 if __name__ == "__main__":
@@ -80,4 +96,6 @@ if __name__ == "__main__":
     load_model()
     image = draw_boxs(test_image, predict_image(test_image))
     
-    image.show()
+    img = Image.fromarray(image, "RGB")
+    img.show()
+    img.save("Photo_Result.png")
